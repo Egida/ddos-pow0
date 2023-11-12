@@ -1,0 +1,4 @@
+LogLevel: debug
+ListenPort: 8083
+PrivKey: private_key_sec
+ExpTokenSec: 10
