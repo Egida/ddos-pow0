@@ -1,6 +1,8 @@
 package config
 
 type Config struct {
+	Server      Server
+	Client      Client
 	LogLevel    string
 	ListenPort  int
 	PrivKey     string
@@ -14,6 +16,16 @@ type RoutingKey string
 const (
 	RoutingTest RoutingKey = "test_routing"
 )
+
+type Server struct {
+	Host string
+	Port int
+}
+
+type Client struct {
+	Host string
+	Port int
+}
 
 type BookConfig struct {
 	Host string

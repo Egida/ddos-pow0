@@ -1,4 +1,9 @@
+Server:
+  Host: localhost
+  Port: 8740
+Client:
+  Host: localhost
+  Port: 8730
 LogLevel: debug
-ListenPort: 8083
 PrivKey: private_key_sec
 ExpTokenSec: 10

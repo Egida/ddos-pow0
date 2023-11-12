@@ -15,7 +15,7 @@ type GracefulStopFuncWithCtx func(ctx context.Context) error
 func SetupHandlers(ctx context.Context, core application.Core, cfg *config.Config) error {
 	ctx = application.WithApp(ctx, core)
 
-	listener, err := net.Listen("tcp", fmt.Sprintf(":%s", cfg.ListenPort))
+	listener, err := net.Listen("tcp", fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port))
 	if err != nil {
 		return err
 	}
@@ -67,7 +67,7 @@ func ProcessRequest(msgStr string, clientInfo string) (*challengeResp.Message, e
 	}
 	switch msg.Header {
 	case challengeResp.QUIT:
-		fmt.Println(challengeResp.QUIT)
+		fmt.Println(challengeResp.QUIT + "s")
 	case challengeResp.REQUEST_CHALLENGE:
 		fmt.Println(challengeResp.REQUEST_CHALLENGE)
 	}

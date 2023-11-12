@@ -1,15 +1,27 @@
 package client
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"github.com/dwnGnL/ddos-pow/config"
 	"github.com/dwnGnL/ddos-pow/internal/application"
+	challenge_resp "github.com/dwnGnL/ddos-pow/lib/protocol/challenge-resp"
+	"io"
 	"log"
+	"net"
 	"net/http"
 )
 
 type GracefulStopFuncWithCtx func(ctx context.Context) error
+
+type Handler struct {
+	conf *config.Config
+}
+
+func newHandler(cfg *config.Config) *Handler {
+	return &Handler{conf: cfg}
+}
 
 /*func SetupHandlers(core application.Core, cfg *config.Config) GracefulStopFuncWithCtx {
 	srv := &http.Server{
@@ -32,13 +44,15 @@ type GracefulStopFuncWithCtx func(ctx context.Context) error
 func SetupHandlers(core application.Core, cfg *config.Config) GracefulStopFuncWithCtx {
 	mux := http.NewServeMux()
 
-	handler := application.WithApp2(core, mux)
+	handlerRoutes := application.WithApp2(core, mux)
 
-	mux.HandleFunc("/ping", Ping)
+	handler := newHandler(cfg)
+
+	mux.HandleFunc("/ping", handler.Quit)
 
 	srv := &http.Server{
-		Addr:    ":8080",
-		Handler: handler,
+		Addr:    fmt.Sprintf("%s:%d", cfg.Client.Host, cfg.Client.Port),
+		Handler: handlerRoutes,
 	}
 
 	go func() {
@@ -50,7 +64,7 @@ func SetupHandlers(core application.Core, cfg *config.Config) GracefulStopFuncWi
 	return srv.Shutdown
 }
 
-func Ping(w http.ResponseWriter, r *http.Request) {
+func (h Handler) Quit(w http.ResponseWriter, r *http.Request) {
 	app, err := application.GetAppFromRequest(r)
 	if err != nil {
 		w.WriteHeader(http.StatusOK)
@@ -58,8 +72,47 @@ func Ping(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println("fmt ping service", app.GetServer().Ping())
+	address := fmt.Sprintf("%s:%d", h.conf.Server.Host, h.conf.Server.Port)
+
+	conn, err := net.Dial("tcp", address)
+	if err != nil {
+		return
+	}
+
+	fmt.Println("connected to", address)
+	defer conn.Close()
+
+	reader := bufio.NewReader(conn)
+
+	err = sendMsg(challenge_resp.Message{
+		Header:  challenge_resp.QUIT,
+		Payload: "",
+	}, conn)
+
+	// reading and parsing response
+	msgStr, err := readConnMsg(reader)
+	if err != nil {
+		fmt.Errorf("err read msg: %w", err)
+		return
+	}
+
+	fmt.Println("msgStr = ", msgStr)
+
+	fmt.Println("fmt ping service", app.GetServer().Ping(), address)
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("pong 2"))
+}
+
+// readConnMsg - read string message from connection
+func readConnMsg(reader *bufio.Reader) (string, error) {
+	return reader.ReadString('\n')
+}
+
+// sendMsg - send protocol message to connection
+func sendMsg(msg challenge_resp.Message, conn io.Writer) error {
+	msgStr := fmt.Sprintf("%s\n", msg.Stringify())
+	_, err := conn.Write([]byte(msgStr))
+	fmt.Println("msg = ", msgStr)
+	return err
 }

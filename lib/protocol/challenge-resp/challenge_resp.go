@@ -23,7 +23,7 @@ type Message struct {
 // Stringify - stringify message to send it by tcp-connection
 // divider between header and payload is |
 func (m *Message) Stringify() string {
-	return fmt.Sprintf("%d|%s", m.Header, m.Payload)
+	return fmt.Sprintf("%s|%s", m.Header, m.Payload)
 }
 
 // ParseMessage - parses Message from str, checks header and payload
