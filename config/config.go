@@ -3,6 +3,7 @@ package config
 type Config struct {
 	Server      Server
 	Client      Client
+	Pow         Pow
 	LogLevel    string
 	ListenPort  int
 	PrivKey     string
@@ -25,6 +26,12 @@ type Server struct {
 type Client struct {
 	Host string
 	Port int
+}
+
+type Pow struct {
+	HashcashZerosCount    int
+	HashcashDuration      int64
+	HashcashMaxIterations int
 }
 
 type BookConfig struct {

@@ -24,12 +24,10 @@ func StartClient(cfg *config.Config) error {
 	ctx := context.Background()
 	ctx, cancelCtx := context.WithCancel(ctx)
 	defer cancelCtx()
-	s, err := buildService(cfg)
+	s, err := buildClient(cfg)
 	if err != nil {
 		return fmt.Errorf("build service err:%w", err)
 	}
-
-	fmt.Println(s.GetServer().Ping())
 
 	gracefulStopWithCtx := client.SetupHandlers(s, cfg)
 
@@ -55,6 +53,6 @@ func StartClient(cfg *config.Config) error {
 	return nil
 }
 
-func buildService(conf *config.Config) (application.Core, error) {
+func buildClient(conf *config.Config) (application.Core, error) {
 	return service.New(conf), nil
 }

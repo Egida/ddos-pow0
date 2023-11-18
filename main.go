@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/dwnGnL/ddos-pow/cmd"
 	"github.com/dwnGnL/ddos-pow/config"
 	"log"
@@ -32,7 +31,6 @@ func main() {
 	switch args[1] {
 	case CLIENT:
 		cfg := config.FromFile(os.Getenv("config"))
-		fmt.Println(cfg)
 		intLogger(cfg.LogLevel)
 		err := cmd.StartClient(cfg)
 		if err != nil {
@@ -40,7 +38,6 @@ func main() {
 		}
 	case SERVER:
 		cfg := config.FromFile(os.Getenv("config"))
-		fmt.Println(cfg)
 		intLogger(cfg.LogLevel)
 		err := cmd.StartServer(cfg)
 		if err != nil {

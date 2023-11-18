@@ -8,14 +8,15 @@ import (
 )
 
 type Core interface {
-	GetServer() service.Server
+	GetServer() service.ServerService
+	GetClient() service.ClientService
 }
 
-func WithApp(ctx context.Context, app Core) context.Context {
+/*func WithApp(ctx context.Context, app Core) context.Context {
 	return context.WithValue(ctx, ContextApp, app)
-}
+}*/
 
-func WithApp2(app Core, f http.Handler) http.Handler {
+func WithApp(app Core, f http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), ContextApp, app)
 		r = r.WithContext(ctx)
