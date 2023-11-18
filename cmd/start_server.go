@@ -35,8 +35,6 @@ func StartServer(cfg *config.Config) error {
 		return err
 	}
 
-	return nil
-
 	var group errgroup.Group
 
 	group.Go(func() error {
