@@ -11,34 +11,33 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const (
-	CLIENT = "client"
-	SERVER = "server"
-)
-
 var Version = "v0.0.1"
+
+type command string
+
+const (
+	CLIENT command = "client" // command to start the client service
+	SERVER command = "server" // command to start the server service
+)
 
 func main() {
 	args := os.Args
-
 	if len(args) != 2 {
 		log.Fatalf("service must be runned with one parameter!")
 		return
 	}
 
-	os.Setenv("config", "./config.yaml")
-
-	switch args[1] {
+	cfg := config.FromFile(os.Getenv("CONFIG_FILE"))
+	intLogger(cfg.LogLevel)
+	service := command(args[1])
+	
+	switch service {
 	case CLIENT:
-		cfg := config.FromFile(os.Getenv("config"))
-		intLogger(cfg.LogLevel)
 		err := cmd.StartClient(cfg)
 		if err != nil {
 			log.Fatalf("app run: %s", err)
 		}
 	case SERVER:
-		cfg := config.FromFile(os.Getenv("config"))
-		intLogger(cfg.LogLevel)
 		err := cmd.StartServer(cfg)
 		if err != nil {
 			log.Fatalf("app run: %s", err)

@@ -12,10 +12,6 @@ type Core interface {
 	GetClient() service.ClientService
 }
 
-/*func WithApp(ctx context.Context, app Core) context.Context {
-	return context.WithValue(ctx, ContextApp, app)
-}*/
-
 func WithApp(app Core, f http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), ContextApp, app)

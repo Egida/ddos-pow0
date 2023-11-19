@@ -16,13 +16,13 @@ type ServiceImpl struct {
 
 type ServerService interface {
 	Ping() string
-	ResponseChallenge(clientInfo string) (msg *challenge_resp.Message, err error)
-	ResponseResource(clientInfo string, hashCashSolved string) (msg *challenge_resp.Message, err error)
+	ResponseChallenge(clientIP string) (msg *challenge_resp.Message, err error)
+	ResponseResource(clientIP string, hashCashSolved string) (msg *challenge_resp.Message, err error)
 }
 
 type ClientService interface {
 	RequestChallenge() (*pow.HashcashData, error)
-	RequestResource(data pow.HashcashData) (string, error)
+	RequestResource(data pow.HashcashData) (*challenge_resp.Message, error)
 }
 
 type Option func(*ServiceImpl)

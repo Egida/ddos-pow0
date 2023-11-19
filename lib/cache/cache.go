@@ -5,22 +5,17 @@ import (
 	"time"
 )
 
-// InMemoryCache - implementation of Cache interface
-// local in-memory storage, replacement for Redis in tests
-// Mutex is used to protect map (sync.Map can be used too)
+// InMemoryCache to cash clients challenges
 type InMemoryCache struct {
 	dataMap map[int]inMemoryValue
 	lock    *sync.Mutex
 }
 
-// inMemoryValue - internal struct to check expiration on values in cache
 type inMemoryValue struct {
 	SetTime    int64
 	Expiration int64
 }
 
-// InitInMemoryCache - create new instance of InMemoryCache
-// clock - instance of Clock to get time.Now() (and mocks in tests)
 func InitInMemoryCache() *InMemoryCache {
 	return &InMemoryCache{
 		dataMap: make(map[int]inMemoryValue, 0),
@@ -28,7 +23,7 @@ func InitInMemoryCache() *InMemoryCache {
 	}
 }
 
-// Add - add rand value with expiration (in seconds) to cache
+// Add to add challenge into cache with expiration(in seconds)
 func (c *InMemoryCache) Add(key int, expiration int64) error {
 	c.lock.Lock()
 	defer c.lock.Unlock()
@@ -39,7 +34,7 @@ func (c *InMemoryCache) Add(key int, expiration int64) error {
 	return nil
 }
 
-// Get - check existence of int key in cache
+// Get to get challenge from cache
 func (c *InMemoryCache) Get(key int) (bool, error) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
@@ -50,7 +45,7 @@ func (c *InMemoryCache) Get(key int) (bool, error) {
 	return ok, nil
 }
 
-// Delete - delete key from cache
+// Delete to delete challenge from
 func (c *InMemoryCache) Delete(key int) {
 	c.lock.Lock()
 	defer c.lock.Unlock()

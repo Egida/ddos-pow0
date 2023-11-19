@@ -32,7 +32,7 @@ func StartServer(cfg *config.Config) error {
 	err = server.SetupHandlers(s, cfg)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("[SetupHandlers] err: %w", err)
 	}
 
 	var group errgroup.Group

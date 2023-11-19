@@ -11,10 +11,11 @@ import (
 	"strings"
 )
 
+// SetupHandlers open tcp connection
 func SetupHandlers(core application.Core, cfg *config.Config) error {
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.Server.Port))
 	if err != nil {
-		return err
+		return fmt.Errorf("net listen err: %w", err)
 	}
 
 	defer listener.Close()
@@ -28,6 +29,7 @@ func SetupHandlers(core application.Core, cfg *config.Config) error {
 	}
 }
 
+// handleConnection each new tcp connection
 func handleConnection(core application.Core, conn net.Conn) {
 	defer conn.Close()
 
@@ -51,26 +53,23 @@ func handleConnection(core application.Core, conn net.Conn) {
 	}
 }
 
+// processRequest process tcp request
 func processRequest(core application.Core, msgStr string, clienInfo string) (*challengeResp.Message, error) {
 	msg, err := challengeResp.ParseMessage(msgStr)
 	if err != nil {
 		return nil, err
 	}
 
-	clienInfo = strings.Split(clienInfo, ":")[0]
-
-	fmt.Println("clientInfo split", clienInfo)
-
-	fmt.Println("msg 3 ", msg)
+	clientIP := strings.Split(clienInfo, ":")[0]
 
 	serverService := core.GetServer()
 	command := msg.Header
 
 	switch command {
 	case challengeResp.REQUEST_CHALLENGE:
-		msg, err = serverService.ResponseChallenge(clienInfo)
+		msg, err = serverService.ResponseChallenge(clientIP)
 	case challengeResp.REQUEST_RESOURCE:
-		msg, err = serverService.ResponseResource(clienInfo, msg.Payload)
+		msg, err = serverService.ResponseResource(clientIP, msg.Payload)
 	}
 
 	if err != nil {

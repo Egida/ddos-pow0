@@ -6,27 +6,25 @@ import (
 	"fmt"
 	"github.com/dwnGnL/ddos-pow/config"
 	"github.com/dwnGnL/ddos-pow/lib/cache"
+	"github.com/dwnGnL/ddos-pow/lib/goerrors"
 	"github.com/dwnGnL/ddos-pow/lib/pow"
 	challengeResp "github.com/dwnGnL/ddos-pow/lib/protocol/challenge-resp"
 	"golang.org/x/exp/rand"
-	"log/slog"
 	"strconv"
 	"time"
 )
 
-// Quotes - const array of quotes to respond on client's request
+// Quotes of word of wisdom book
 var Quotes = []string{
-	"All saints who remember to keep and do these sayings, " +
-		"walking in obedience to the commandments, " +
-		"shall receive health in their navel and marrow to their bones",
+	"The only true wisdom is in knowing you know nothing",
 
-	"And shall find wisdom and great treasures of knowledge, even hidden treasures",
+	"At the end of the day you are your own lawmaker",
 
-	"And shall run and not be weary, and shall walk and not faint",
+	"True wisdom comes to each of us when we realize how little we understand about life, ourselves, and the world around us",
 
-	"And I, the Lord, give unto them a promise, " +
-		"that the destroying angel shall pass by them, " +
-		"as the children of Israel, and not slay them",
+	"People who are crazy enough to think they can change the world are the ones who do",
+
+	"Personal Development Is A Major Time-Saver. The Better You Become, The Less Time It Takes You To Achieve Your Goals",
 }
 
 type Server struct {
@@ -38,18 +36,20 @@ func (s Server) Ping() string {
 	return "Pong..."
 }
 
-func (s Server) ResponseChallenge(clientInfo string) (msg *challengeResp.Message, err error) {
+// ResponseChallenge send challenge to solve to client
+func (s Server) ResponseChallenge(clientIP string) (msg *challengeResp.Message, err error) {
 	randValue := rand.Intn(100000)
 	err = s.cache.Add(randValue, s.conf.Pow.HashcashDuration)
 	if err != nil {
 		return nil, fmt.Errorf("err add rand to cache: %w", err)
 	}
 
+	// challenge for client
 	hashcash := pow.HashcashData{
 		Version:    1,
 		ZerosCount: s.conf.Pow.HashcashZerosCount,
 		Date:       time.Now().Unix(),
-		Resource:   clientInfo,
+		Resource:   clientIP,
 		Rand:       base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%d", randValue))),
 		Counter:    0,
 	}
@@ -67,9 +67,9 @@ func (s Server) ResponseChallenge(clientInfo string) (msg *challengeResp.Message
 	return
 }
 
-func (s Server) ResponseResource(clientInfo string, hashCashSolved string) (msg *challengeResp.Message, err error) {
-	fmt.Println("just a check response resource")
-	fmt.Printf("client %s requests resource with payload %s\n", clientInfo, hashCashSolved)
+// ResponseResource check challenge solution and send response
+func (s Server) ResponseResource(clientIP string, hashCashSolved string) (msg *challengeResp.Message, err error) {
+	goerrors.Log().Printf("client %s requests resource with payload %s\n", clientIP, hashCashSolved)
 	var hashcash pow.HashcashData
 	msg = new(challengeResp.Message)
 
@@ -78,9 +78,10 @@ func (s Server) ResponseResource(clientInfo string, hashCashSolved string) (msg 
 		return nil, fmt.Errorf("err unmarshal hashcash: %w", err)
 	}
 
-	slog.Info("hashcash test 4", hashcash)
+	goerrors.Log().Info("hashcash test 4", hashcash)
 
-	if hashcash.Resource != clientInfo {
+	if hashcash.Resource != clientIP {
+		msg.Header = challengeResp.FAIL
 		msg.Payload = "invalid hashcash resource"
 		return msg, nil
 	}
@@ -101,11 +102,13 @@ func (s Server) ResponseResource(clientInfo string, hashCashSolved string) (msg 
 	}
 
 	if !exists {
+		msg.Header = challengeResp.FAIL
 		msg.Payload = "challenge expired or not sent"
 		return msg, nil
 	}
 
 	if time.Now().Unix()-hashcash.Date > s.conf.Pow.HashcashDuration {
+		msg.Header = challengeResp.FAIL
 		msg.Payload = "challenge expired"
 		return msg, nil
 	}
@@ -119,8 +122,9 @@ func (s Server) ResponseResource(clientInfo string, hashCashSolved string) (msg 
 	if err != nil {
 		return nil, fmt.Errorf("invalid hashcash")
 	}
-	fmt.Printf("client %s succesfully computed hashcash %s\n", clientInfo, hashCashSolved)
+	goerrors.Log().Printf("client %s succesfully computed hashcash %s\n", clientIP, hashCashSolved)
 
+	// good job, send quote to client
 	msg = &challengeResp.Message{
 		Header:  challengeResp.RESPONSE_RESOURCE,
 		Payload: Quotes[rand.Intn(4)],

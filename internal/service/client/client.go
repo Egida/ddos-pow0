@@ -17,9 +17,11 @@ type Client struct {
 	conf *config.Config
 }
 
+// RequestChallenge get challenge from server
 func (s Client) RequestChallenge() (*pow.HashcashData, error) {
 	address := fmt.Sprintf("%s:%d", s.conf.Server.Host, s.conf.Server.Port)
 
+	// connect to server
 	conn, err := net.Dial("tcp", address)
 	if err != nil {
 		slog.Warn("tcp dial", err)
@@ -30,6 +32,7 @@ func (s Client) RequestChallenge() (*pow.HashcashData, error) {
 
 	reader := bufio.NewReader(conn)
 
+	// send request go get challenge
 	err = sendMsg(challengeResp.Message{
 		Header: challengeResp.REQUEST_CHALLENGE,
 	}, conn)
@@ -37,6 +40,7 @@ func (s Client) RequestChallenge() (*pow.HashcashData, error) {
 		return nil, fmt.Errorf("err send request: %w", err)
 	}
 
+	// read and parse challenge
 	msgStr, err := readConnMsg(reader)
 	if err != nil {
 		return nil, fmt.Errorf("err read msg: %w", err)
@@ -57,54 +61,56 @@ func (s Client) RequestChallenge() (*pow.HashcashData, error) {
 	return &hashcash, nil
 }
 
-func (s Client) RequestResource(hashcash pow.HashcashData) (string, error) {
+// RequestResource get quote from server
+func (s Client) RequestResource(hashcash pow.HashcashData) (*challengeResp.Message, error) {
+	// solve server challenge
 	hashcash, err := hashcash.ComputeHashcash(s.conf.Pow.HashcashMaxIterations)
 	if err != nil {
-		return "", fmt.Errorf("err compute hashcash: %w", err)
+		return nil, fmt.Errorf("err compute hashcash: %w", err)
 	}
 
-	fmt.Println("hashcash computed:", hashcash)
-	// marshal solution to json
+	goerrors.Log().Println("hashcash computed:", hashcash)
 	byteData, err := json.Marshal(hashcash)
 	if err != nil {
-		return "", fmt.Errorf("err marshal hashcash: %w", err)
+		return nil, fmt.Errorf("err marshal hashcash: %w", err)
 	}
 
 	address := fmt.Sprintf("%s:%d", s.conf.Server.Host, s.conf.Server.Port)
 
+	// connect to server
 	conn, err := net.Dial("tcp", address)
 	if err != nil {
 		slog.Warn("tcp dial", err)
-		return "", err
+		return nil, err
 	}
 
 	defer conn.Close()
 
 	reader := bufio.NewReader(conn)
 
-	// 3. send challenge solution back to server
+	// send challenge solution to server
 	err = sendMsg(challengeResp.Message{
 		Header:  challengeResp.REQUEST_RESOURCE,
 		Payload: string(byteData),
 	}, conn)
 	if err != nil {
-		return "", fmt.Errorf("err send request: %w", err)
+		return nil, fmt.Errorf("err send request: %w", err)
 	}
 
-	fmt.Println("challenge sent to server")
+	goerrors.Log().Println("challenge sent to server")
 
-	// 4. get result quote from server
+	// parse server response
 	msgStr, err := readConnMsg(reader)
 	if err != nil {
-		return "", fmt.Errorf("err read msg: %w", err)
+		return nil, fmt.Errorf("err read msg: %w", err)
 	}
 
 	msg, err := challengeResp.ParseMessage(msgStr)
 	if err != nil {
-		return "", fmt.Errorf("err parse msg: %w", err)
+		return nil, fmt.Errorf("err parse msg: %w", err)
 	}
 
-	return msg.Payload, nil
+	return msg, nil
 }
 
 func readConnMsg(reader *bufio.Reader) (string, error) {

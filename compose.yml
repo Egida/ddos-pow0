@@ -1,53 +1,27 @@
 version: "3.8"
 services:
   go-server:
-    image: golang:1.21
+    build:
+      context: .
+      dockerfile: server.Dockerfile
     restart: no
     ports:
       - "8740:8740"
-    links:
-      - db
-    working_dir: /app
     volumes:
       - .:/app
-    command:
-      - ./bin/ddos
-      - server
-    depends_on:
-      - db
 
   go-client:
-    image: golang:1.21
+    build:
+      context: .
+      dockerfile: client.Dockerfile
     restart: no
     ports:
       - "8730:8730"
-    links:
-      - db
-      - go-server
-    working_dir: /app
-    volumes:
-      - .:/app
-    command:
-      - ./bin/ddos
-      - client
     depends_on:
       - go-server
-
-  db:
-    image: postgres:15.4-alpine
     volumes:
-      - db-data:/var/lib/postgresql/data
-    restart: on-failure
-    environment:
-      POSTGRES_DB: "pow_db"
-      POSTGRES_USER: "pow_user"
-      POSTGRES_PASSWORD: "123456"
-      POSTGRES_HOST_AUTH_METHOD: trust
-    ports:
-      - "5433:5432"
+      - .:/app
 
 volumes:
-  db-data:
   go-server:
   go-client:
-
